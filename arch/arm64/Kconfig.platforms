@@ -274,7 +274,6 @@ config MACH_MT6768
 	select MTK_GIC_V3_EXT
 	select MTK_PID_MAP
 	select MTK_SYSIRQ
-	select MTK_DEBUG_LATCH
 	select MTK_PLAT_SRAM_FLAG
 	select MTK_DFD_INTERNAL_DUMP
 	select MTK_EMI
@@ -285,7 +284,6 @@ config MACH_MT6768
 	select SDCARD_FS
 	select MTK_CACHE_PARITY_CHECK
 	select MTK_LASTBUS_INTERFACE
-	select MTK_DEBUG_LATCH
 	select MTK_ES_REG
 	select MTK_CQDMA
 	select MTK_GIC_TARGET_ALL
