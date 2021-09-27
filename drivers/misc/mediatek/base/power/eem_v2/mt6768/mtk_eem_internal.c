@@ -206,10 +206,10 @@ struct eem_det eem_detectors[NR_EEM_DET] = {
 		.ctrl_id	= EEM_CTRL_GPU,
 		.features	= FEA_INIT01 | FEA_INIT02,
 #if ENABLE_LOO_G
-		.max_freq_khz	= 850000,/* MHz */
+		.max_freq_khz	= 1100000,/* MHz */
 		.VMAX		= VMAX_VAL_GL,
 #else
-		.max_freq_khz   = 850000,
+		.max_freq_khz   = 1100000,
 		.VMAX		= VMAX_VAL_GPU,
 #endif
 		.VBOOT		= VBOOT_VAL, /* 10uV */
