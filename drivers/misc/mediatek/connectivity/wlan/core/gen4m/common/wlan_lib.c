@@ -7227,7 +7227,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
     }else{
         DBGLOG(RLM, ERROR, " power limit config k19A");
         prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(
-                prAdapter, "Sta2gBw", MAX_BW_20MHZ);
+                prAdapter, "Sta2gBw", MAX_BW_40MHZ);
     }
     /*K19S code for HQ-167460 by fenghaitao at 2021/11/25 end*/
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
