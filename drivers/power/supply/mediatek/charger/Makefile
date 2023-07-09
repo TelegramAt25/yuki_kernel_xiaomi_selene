@@ -11,6 +11,13 @@
 # See http://www.gnu.org/licenses/gpl-2.0.html for more details.
 #
 
+ifeq ($(CONFIG_TARGET_PRODUCT_SELENECOMMON),y)
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+$(info MTK_PLATFORM_ID is [${MTK_PLATFORM}])
+$(info MTK_CHARGER : TARGET PRODUCT is SELENE )
+export TARGET_PRODUCT_SELENE=y
+endif
+
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 subdir-ccflags-y += -Werror
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
