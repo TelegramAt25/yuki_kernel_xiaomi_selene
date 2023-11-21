@@ -335,6 +335,8 @@ int mtk_ipi_send(struct mtk_ipi_device *ipidev, int ipi_id,
 	else if (!len)
 		len = pin->msg_size;
 
+	timeover = cpu_clock(0) + MS_TO_NS(timeout);
+
 	if (ipidev->pre_cb)
 		ipidev->pre_cb(ipidev->prdata);
 
@@ -355,8 +357,6 @@ int mtk_ipi_send(struct mtk_ipi_device *ipidev, int ipi_id,
 		}
 		mutex_lock(&pin->mutex_send);
 	}
-
-	timeover = cpu_clock(0) + MS_TO_NS(timeout);
 
 	ret = rpmsg_trysend(ipidev->table[ipi_id].ept, data, len);
 	ipidev->table[ipi_id].trysend_count = 1;
@@ -440,6 +440,8 @@ int mtk_ipi_send_compl(struct mtk_ipi_device *ipidev, int ipi_id,
 	else if (!len)
 		len = pin_s->msg_size;
 
+	timeover = cpu_clock(0) + MS_TO_NS(timeout);
+
 	if (ipidev->pre_cb)
 		ipidev->pre_cb(ipidev->prdata);
 
@@ -462,8 +464,6 @@ int mtk_ipi_send_compl(struct mtk_ipi_device *ipidev, int ipi_id,
 	}
 
 	atomic_inc(&ipidev->table[ipi_id].holder);
-
-	timeover = cpu_clock(0) + MS_TO_NS(timeout);
 
 	ret = rpmsg_trysend(ipidev->table[ipi_id].ept, data, len);
 	ipidev->table[ipi_id].trysend_count = 1;
@@ -511,9 +511,9 @@ int mtk_ipi_send_compl(struct mtk_ipi_device *ipidev, int ipi_id,
 		} while (ts_before(timeover));
 	} else {
 		/* WAIT Mode */
-		timeover = ts_before(timeover) ? timeover - cpu_clock(0) : 0;
+		timeout = ts_before(timeover) ? timeover - cpu_clock(0) : 0;
 		ret = wait_for_completion_timeout(&pin_r->notify,
-			nsecs_to_jiffies(timeover));
+			usecs_to_jiffies(timeout));
 	}
 
 	atomic_set(&ipidev->table[ipi_id].holder, 0);

@@ -30,7 +30,6 @@ ccci_port-y += port_cfg.o
 ccci_port-y += port_char.o
 ccci_port-y += port_ctlmsg.o
 ccci_port-y += port_udc.o
-ccci_port-y += port_misc.o
 ccci_port-y += port_ipc.o
 ccci_port-y += port_net.o
 ccci_port-y += port_poller.o
@@ -38,7 +37,18 @@ ccci_port-y += port_proxy.o
 ccci_port-y += port_rpc.o
 ccci_port-y += port_smem.o
 ccci_port-y += port_sysmsg.o
-ccci_port-y += ccci_swtp.o
+ifeq ($(CONFIG_SWTP_DRIVER), y)
+ccci_port-y += ccci_swtp_merlin.o
+else
+# Huaqin modify for HQ-123513 by liunianliang at 2021/04/25 start
+  ifeq ($(CONFIG_SWTP_DRIVER_SELENE), y)
+  ccci_port-y += ccci_swtp_selene.o
+  else
+  ccci_port-y += ccci_swtp.o
+  endif
+# Huaqin modify for HQ-123513 by liunianliang at 2021/04/25 end
+endif
+
 else
 obj-  := dummy.o # avoid build error
 endif

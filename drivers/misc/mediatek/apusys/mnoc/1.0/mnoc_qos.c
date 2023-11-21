@@ -206,27 +206,21 @@ static inline void enque_qos_wq(struct work_struct *work)
 
 static int add_qos_request(struct pm_qos_request *req)
 {
-#ifndef APU_QOS_DVFSRC
 	pm_qos_add_request(req, PM_QOS_APU_MEMORY_BANDWIDTH,
 		PM_QOS_DEFAULT_VALUE);
-#endif
 	return 0;
 }
 
 static void update_qos_request(struct pm_qos_request *req, uint32_t val)
 {
 	LOG_DEBUG("bw = %d\n", val);
-#ifndef APU_QOS_DVFSRC
 	pm_qos_update_request(req, val);
-#endif
 }
 
 static int destroy_qos_request(struct pm_qos_request *req)
 {
-#ifndef APU_QOS_DVFSRC
 	pm_qos_update_request(req, PM_QOS_APU_MEMORY_BANDWIDTH_DEFAULT_VALUE);
 	pm_qos_remove_request(req);
-#endif
 	return 0;
 }
 
@@ -1012,15 +1006,6 @@ int apu_cmd_qos_end(uint64_t cmd_id, uint64_t sub_cmd_id,
 			update_qos_request(&(engine_pm_qos_counter[i].qos_req),
 				PM_QOS_APU_MEMORY_BANDWIDTH_DEFAULT_VALUE);
 		}
-#if MNOC_QOS_BOOST_ENABLE
-		mutex_lock(&apu_qos_boost_mtx);
-		if (!apu_qos_boost_flag) {
-			apu_bw_vcore_opp = NR_APU_VCORE_OPP - 1;
-			apu_qos_set_vcore(vcore_opp_map[apu_bw_vcore_opp]);
-		}
-		mutex_unlock(&apu_qos_boost_mtx);
-#endif
-
 	}
 #endif
 

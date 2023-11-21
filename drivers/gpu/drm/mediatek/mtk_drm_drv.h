@@ -36,6 +36,15 @@
 #define MTK_DRM_CMDQ_ASYNC
 #define CONFIG_MTK_DISPLAY_CMDQ
 #define MTK_FILL_MIPI_IMPEDANCE
+#if (defined(CONFIG_MACH_MT6885) || defined(CONFIG_MACH_MT6873)\
+	|| defined(CONFIG_MACH_MT6893) ||\
+	defined(CONFIG_MACH_MT6853) || \
+	defined(CONFIG_MACH_MT6833)) &&\
+	defined(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT)
+//#define MTK_DRM_DELAY_PRESENT_FENCE
+/* Delay present fence would cause config merge */
+#endif
+
 
 struct device;
 struct device_node;
@@ -103,7 +112,6 @@ struct mtk_drm_private {
 	unsigned int num_sessions;
 	enum MTK_DRM_SESSION_MODE session_mode;
 	atomic_t crtc_present[MAX_CRTC];
-	atomic_t crtc_sf_present[MAX_CRTC];
 
 	struct device_node *mutex_node;
 	struct device *mutex_dev;
@@ -176,9 +184,6 @@ struct mtk_drm_private {
 	int vds_path_switch_done;
 	int vds_path_enable;
 
-	bool need_cwb_path_disconnect;
-	bool cwb_is_preempted;
-
 	/* Due to 2nd display share 1 secure gce client, need store here */
 	struct cmdq_client *ext_sec_client;
 };
@@ -243,6 +248,8 @@ extern struct platform_driver mtk_dp_tx_driver;
 extern struct platform_driver mtk_dp_intf_driver;
 #endif
 
+void mtk_atomic_state_get(struct drm_atomic_state *state);
+void mtk_atomic_state_put(struct drm_atomic_state *state);
 void mtk_atomic_state_put_queue(struct drm_atomic_state *state);
 void mtk_drm_fence_update(unsigned int fence_idx, unsigned int index);
 void drm_trigger_repaint(enum DRM_REPAINT_TYPE type,
@@ -250,8 +257,6 @@ void drm_trigger_repaint(enum DRM_REPAINT_TYPE type,
 int mtk_drm_suspend_release_fence(struct device *dev);
 void mtk_drm_suspend_release_present_fence(struct device *dev,
 					   unsigned int index);
-void mtk_drm_suspend_release_sf_present_fence(struct device *dev,
-					      unsigned int index);
 void mtk_drm_top_clk_prepare_enable(struct drm_device *drm);
 void mtk_drm_top_clk_disable_unprepare(struct drm_device *drm);
 struct mtk_panel_params *mtk_drm_get_lcm_ext_params(struct drm_crtc *crtc);
@@ -264,5 +269,5 @@ int lcm_fps_ctx_init(struct drm_crtc *crtc);
 int lcm_fps_ctx_reset(struct drm_crtc *crtc);
 int lcm_fps_ctx_update(unsigned long long cur_ns,
 		unsigned int crtc_id, unsigned int mode);
-void disp_drm_debug(const char *opt);
+
 #endif /* MTK_DRM_DRV_H */

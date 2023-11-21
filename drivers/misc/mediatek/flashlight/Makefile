@@ -2,6 +2,14 @@
 # Makefile for the kernel flashlight device drivers.
 #
 
+ifeq ($(strip $(FACTORY_VERSION_MODE)),true)
+ccflags-y += -DFACTORY_CAMERA_MODE
+else
+ccflags-y += -D__XIAOMI_CAMERA__
+ifeq ($(strip $(TARGET_PRODUCT)),selene)
+ccflags-y += -D__SELENE_COMMON__
+endif
+endif
 flashlight-y := flashlight-core.o
 flashlight-y += flashlight-device.o
 
@@ -30,6 +38,9 @@ MTK_PROJECT := $(subst ",,$(CONFIG_ARCH_MTK_PROJECT))
 MTK_CUSTOM_PATH := $(srctree)/drivers/misc/mediatek
 
 ccflags-y += -D$(MTK_PLATFORM) -D$(MTK_PROJECT)
+
+subdir-ccflags-${CONFIG_MACH_MT6833} += \
+	-I$(MTK_CUSTOM_PATH)/include/mt-plat/mt6833/include/mach
 
 subdir-ccflags-y += \
 	-I$(MTK_CUSTOM_PATH)/include/mt-plat \

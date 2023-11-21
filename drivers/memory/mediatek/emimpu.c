@@ -21,6 +21,7 @@
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <mt-plat/aee.h>
+
 LIST_HEAD(mpucb_list);
 static DEFINE_MUTEX(mpucb_mutex);
 
@@ -49,7 +50,7 @@ static unsigned int emimpu_read_protection(
 		reg_type, region, dgroup, 0, 0, 0, &smc_res);
 	return (unsigned int)smc_res.a0;
 }
-#ifdef MTK_EMIMPU_DBG_ENABLE
+
 static ssize_t emimpu_ctrl_show(struct device_driver *driver, char *buf)
 {
 	struct emimpu_dev_t *emimpu_dev_ptr;
@@ -261,7 +262,7 @@ emimpu_ctrl_store_end:
 }
 
 static DRIVER_ATTR_RW(emimpu_ctrl);
-#endif
+
 static void set_regs(
 	struct reg_info_t *reg_list, unsigned int reg_cnt,
 	void __iomem *emi_cen_base)
@@ -624,15 +625,15 @@ static int emimpu_probe(struct platform_device *pdev)
 		for (i = 0; i < emimpu_dev_ptr->domain_cnt; i++)
 			arm_smccc_smc(MTK_SIP_EMIMPU_CONTROL, MTK_EMIMPU_SLVERR,
 				i, 0, 0, 0, 0, 0, &smc_res);
-#ifdef MTK_EMIMPU_DBG_ENABLE
+
 	ret = driver_create_file(&emimpu_drv.driver,
 		&driver_attr_emimpu_ctrl);
 	if (ret)
 		pr_info("%s: fail to create emimpu_ctrl\n", __func__);
-#endif
+
 	return ret;
 }
-
+/*
 static int __init emimpu_ap_region_init(void)
 {
 	struct emimpu_dev_t *emimpu_dev_ptr;
@@ -655,7 +656,7 @@ static int __init emimpu_ap_region_init(void)
 
 	return 0;
 }
-
+*/
 static int __init emimpu_drv_init(void)
 {
 	int ret;
@@ -674,7 +675,7 @@ static void __exit emimpu_drv_exit(void)
 	platform_driver_unregister(&emimpu_drv);
 }
 
-late_initcall_sync(emimpu_ap_region_init);
+/*late_initcall_sync(emimpu_ap_region_init);*/
 module_init(emimpu_drv_init);
 module_exit(emimpu_drv_exit);
 
@@ -692,14 +693,6 @@ int mtk_emimpu_init_region(
 	unsigned int size;
 	unsigned int i;
 
-	if (rg_info) {
-		rg_info->start = 0;
-		rg_info->end = 0;
-		rg_info->rg_num = rg_num;
-		rg_info->lock = false;
-		rg_info->apc = NULL;
-	}
-
 	if (!emimpu_pdev)
 		return -1;
 
@@ -710,6 +703,11 @@ int mtk_emimpu_init_region(
 		pr_info("%s: fail, out-of-range region\n", __func__);
 		return -1;
 	}
+
+	rg_info->start = 0;
+	rg_info->end = 0;
+	rg_info->rg_num = rg_num;
+	rg_info->lock = false;
 
 	size = sizeof(unsigned int) * emimpu_dev_ptr->domain_cnt;
 	rg_info->apc = kmalloc(size, GFP_KERNEL);
@@ -730,11 +728,8 @@ EXPORT_SYMBOL(mtk_emimpu_init_region);
  */
 int mtk_emimpu_free_region(struct emimpu_region_t *rg_info)
 {
-	if (rg_info && rg_info->apc) {
-		kfree(rg_info->apc);
-		return 0;
-	} else
-		return -EINVAL;
+	kfree(rg_info->apc);
+	return 0;
 }
 EXPORT_SYMBOL(mtk_emimpu_free_region);
 

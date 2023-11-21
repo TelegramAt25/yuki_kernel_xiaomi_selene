@@ -600,8 +600,8 @@ static irqreturn_t mtk_disp_ovl_irq_handler(int irq, void *dev_id)
 		DDPPR_ERR("[IRQ] %s: frame underflow! cnt=%d\n",
 			  mtk_dump_comp_str(ovl), priv->underflow_cnt);
 		priv->underflow_cnt++;
-//		mtk_ovl_dump(ovl);
-//		mtk_ovl_analysis(ovl);
+		mtk_ovl_dump(ovl);
+		mtk_ovl_analysis(ovl);
 	}
 	if (val & (1 << 3))
 		DDPIRQ("[IRQ] %s: sw reset done!\n", mtk_dump_comp_str(ovl));
@@ -801,8 +801,6 @@ static void mtk_ovl_layer_on(struct mtk_ddp_comp *comp, unsigned int idx,
 			BIT(ext_idx - 1) | (0xFFFF << ((ext_idx - 1) * 4 + 16));
 		con = BIT(ext_idx - 1) | (idx << ((ext_idx - 1) * 4 + 16));
 		cmdq_pkt_write(handle, comp->cmdq_base,
-		       comp->regs_pa + DISP_REG_OVL_RDMA_CTRL(idx), 0x1, ~0);
-		cmdq_pkt_write(handle, comp->cmdq_base,
 			       comp->regs_pa + DISP_REG_OVL_DATAPATH_EXT_CON,
 			       con, con_mask);
 		return;
@@ -884,27 +882,27 @@ static unsigned int ovl_fmt_convert(struct mtk_disp_ovl *ovl, unsigned int fmt,
 		       OVL_CON_BYTE_SWAP;
 	case DRM_FORMAT_RGBX8888:
 	case DRM_FORMAT_RGBA8888:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_CLRFMT_MAN;
 		else
 			return OVL_CON_CLRFMT_ARGB8888;
 	case DRM_FORMAT_BGRX8888:
 	case DRM_FORMAT_BGRA8888:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_BYTE_SWAP |
 			       OVL_CON_CLRFMT_MAN;
 		else
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_BYTE_SWAP;
 	case DRM_FORMAT_XRGB8888:
 	case DRM_FORMAT_ARGB8888:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_BYTE_SWAP |
 			       OVL_CON_CLRFMT_MAN | OVL_CON_RGB_SWAP;
 		else
 			return OVL_CON_CLRFMT_RGBA8888;
 	case DRM_FORMAT_XBGR8888:
 	case DRM_FORMAT_ABGR8888:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_CLRFMT_MAN |
 			       OVL_CON_RGB_SWAP;
 		else
@@ -914,12 +912,12 @@ static unsigned int ovl_fmt_convert(struct mtk_disp_ovl *ovl, unsigned int fmt,
 	case DRM_FORMAT_YUYV:
 		return OVL_CON_CLRFMT_YUYV(ovl);
 	case DRM_FORMAT_ABGR2101010:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_CLRFMT_MAN |
 			       OVL_CON_RGB_SWAP;
 		return OVL_CON_CLRFMT_RGBA8888 | OVL_CON_BYTE_SWAP;
-	case DRM_FORMAT_ABGR16161616F:
-		if (modifier & MTK_FMT_PREMULTIPLIED)
+	case DRM_FORMAT_ABGRFP16:
+		if (modifier & MTK_FMT_PREMULTIPLIER)
 			return OVL_CON_CLRFMT_ARGB8888 | OVL_CON_CLRFMT_MAN |
 			       OVL_CON_RGB_SWAP;
 		return OVL_CON_CLRFMT_RGBA8888 | OVL_CON_BYTE_SWAP;
@@ -1029,18 +1027,13 @@ static u32 *mtk_get_ovl_csc(enum mtk_ovl_colorspace in,
 	static u32 *ovl_csc[OVL_CS_NUM][OVL_CS_NUM];
 	static bool inited;
 
-	if (out < 0) {
-		DDPPR_ERR("%s: Invalid ovl colorspace in:%d\n", __func__, out);
-		out = 0;
-	}
+	if (inited)
+		goto done;
 
 	if (in < 0) {
 		DDPPR_ERR("%s: Invalid ovl colorspace in:%d\n", __func__, in);
 		in = 0;
 	}
-
-	if (inited)
-		goto done;
 
 	ovl_csc[OVL_SRGB][OVL_P3] = sRGB_to_DCI_P3;
 	ovl_csc[OVL_P3][OVL_SRGB] = DCI_P3_to_sRGB;
@@ -1317,7 +1310,7 @@ static void _ovl_common_config(struct mtk_ddp_comp *comp, unsigned int idx,
 			size = buf_size;
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_EL_ADDR(id);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
 					pending->addr, meta_type,
@@ -1375,7 +1368,7 @@ static void _ovl_common_config(struct mtk_ddp_comp *comp, unsigned int idx,
 			size = buf_size;
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_ADDR(ovl, lye_idx);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
 					pending->addr, meta_type,
@@ -1511,7 +1504,7 @@ static void mtk_ovl_layer_config(struct mtk_ddp_comp *comp, unsigned int idx,
 
 	if (fmt == DRM_FORMAT_ABGR2101010)
 		fmt_ex = 1;
-	else if (fmt == DRM_FORMAT_ABGR16161616F)
+	else if (fmt == DRM_FORMAT_ABGRFP16)
 		fmt_ex = 3;
 
 	if (ext_lye_idx != LYE_NORMAL) {
@@ -1763,7 +1756,7 @@ static bool compr_l_config_PVRIC_V3_1(struct mtk_ddp_comp *comp,
 
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_EL_ADDR(id);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				size = buf_size;
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
@@ -1818,7 +1811,7 @@ static bool compr_l_config_PVRIC_V3_1(struct mtk_ddp_comp *comp,
 
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_ADDR(ovl, lye_idx);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				size = buf_size;
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
@@ -2052,7 +2045,7 @@ static bool compr_l_config_AFBC_V1_2(struct mtk_ddp_comp *comp,
 
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_EL_ADDR(id);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				size = buf_size;
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
@@ -2114,7 +2107,7 @@ static bool compr_l_config_AFBC_V1_2(struct mtk_ddp_comp *comp,
 
 			regs_addr = comp->regs_pa +
 				DISP_REG_OVL_ADDR(ovl, lye_idx);
-			if (state->pending.is_sec && pending->addr) {
+			if (state->pending.is_sec) {
 				size = buf_size;
 				meta_type = CMDQ_IWC_H_2_MVA;
 				cmdq_sec_pkt_write_reg(handle, regs_addr,
@@ -2247,8 +2240,7 @@ static void mtk_ovl_addon_config(struct mtk_ddp_comp *comp,
 				 struct cmdq_pkt *handle)
 {
 	if ((addon_config->config_type.module == DISP_RSZ ||
-		addon_config->config_type.module == DISP_RSZ_v2 ||
-		addon_config->config_type.module == DISP_RSZ_v3) &&
+		addon_config->config_type.module == DISP_RSZ_v2) &&
 		addon_config->config_type.type == ADDON_BETWEEN) {
 		struct mtk_addon_rsz_config *config =
 			&addon_config->addon_rsz_config;

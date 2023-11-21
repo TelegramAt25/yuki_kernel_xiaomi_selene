@@ -426,12 +426,6 @@ static int mtk_drm_esd_recover(struct drm_crtc *crtc)
 	mtk_drm_crtc_disable(crtc, true);
 	CRTC_MMP_MARK(drm_crtc_index(crtc), esd_recovery, 0, 2);
 
-#ifdef MTK_FB_MMDVFS_SUPPORT
-	if (drm_crtc_index(crtc) == 0)
-		mtk_disp_set_hrt_bw(mtk_crtc,
-			mtk_crtc->qos_ctx->last_hrt_req);
-#endif
-
 	mtk_drm_crtc_enable(crtc);
 	CRTC_MMP_MARK(drm_crtc_index(crtc), esd_recovery, 0, 3);
 
@@ -618,10 +612,7 @@ static void mtk_disp_esd_chk_init(struct drm_crtc *crtc)
 	atomic_set(&esd_ctx->check_wakeup, 0);
 	atomic_set(&esd_ctx->ext_te_event, 0);
 	atomic_set(&esd_ctx->target_time, 0);
-	if (panel_ext->params->cust_esd_check == 1)
-		esd_ctx->chk_mode = READ_LCM;
-	else
-		esd_ctx->chk_mode = READ_EINT;
+	esd_ctx->chk_mode = READ_EINT;
 	mtk_drm_request_eint(crtc);
 
 	wake_up_process(esd_ctx->disp_esd_chk_task);
