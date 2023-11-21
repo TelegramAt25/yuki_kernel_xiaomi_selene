@@ -435,10 +435,8 @@ int get_task_attr(int dsp_id, int task_enum)
 		pr_warn("%s task_enum %d\n", __func__, task_enum);
 		return -1;
 	}
-	if (task_attr == NULL) {
-		pr_warn("%s task_attr NULL\n", __func__);
+	if (task_attr == NULL)
 		return -1;
-	}
 
 	switch (task_enum) {
 	case ADSP_TASK_ATTR_DEFAULT:
@@ -518,6 +516,20 @@ int get_afememref_by_afe_taskid(int task_id)
 	return ret;
 }
 
+int get_aferefmem_by_afe_taskid(int task_id)
+{
+	int ret = 0;
+	struct mtk_adsp_task_attr *task_attr =
+		mtk_get_adsp_task_attr(task_id);
+
+	if (task_id > AUDIO_TASK_DAI_NUM || !task_attr) {
+		pr_info("%s id = %d\n", __func__, task_id);
+		return -1;
+	}
+	ret = task_attr->afe_memif_ref;
+	return ret;
+}
+
 int get_taskid_by_afe_daiid(int task_dai_id)
 {
 	int i = 0;
@@ -541,7 +553,7 @@ int get_taskid_by_afe_daiid(int task_dai_id)
 			return i;
 	}
 
-	pr_err("%s(), afe_dai_id not support: %d", __func__, task_dai_id);
+	pr_err("%s(), err, afe_dai_id: %d", __func__, task_dai_id);
 
 	return -1;
 }
