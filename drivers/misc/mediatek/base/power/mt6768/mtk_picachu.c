@@ -189,6 +189,7 @@ static struct picachu_proc picachu_proc_list[] = {
 static void picachu_apply_efuse_to_eem(enum mt_picachu_vproc_id id,
 				       struct picachu_info *p)
 {
+#ifdef CONFIG_MTK_PTPOD
 	int i, array_idx;
 	int *ctrl_id;
 
@@ -212,6 +213,7 @@ static void picachu_apply_efuse_to_eem(enum mt_picachu_vproc_id id,
 		eem_set_pi_efuse(*(ctrl_id + array_idx),
 				p->ptp1_efuse[i], p->loo_enabled);
 	}
+#endif
 }
 
 static void dump_picachu_info(struct seq_file *m, struct picachu_info *info)
