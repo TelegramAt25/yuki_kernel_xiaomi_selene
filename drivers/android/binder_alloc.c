@@ -47,7 +47,7 @@ static uint32_t binder_alloc_debug_mask;
 module_param_named(debug_mask, binder_alloc_debug_mask,
 		   uint, 0644);
 
-#ifdef CONFIG_DEBUG_KERNEL
+#ifdef DEBUG
 #define binder_alloc_debug(mask, x...) \
 	do { \
 		if (binder_alloc_debug_mask & mask) \
