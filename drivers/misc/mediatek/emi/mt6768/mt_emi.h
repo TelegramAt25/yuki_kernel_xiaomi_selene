@@ -23,8 +23,8 @@
 #define MPU_BYPASS
 #define ISU_VER_CTRL
 /* #define ENABLE_MPU_SLVERR */
-#define DBG_INFO_READY	1
-#define ENABLE_EMI_DEBUG_API
+/* #define DBG_INFO_READY	1 */
+/* #define ENABLE_EMI_DEBUG_API */
 
 /* IRQ from device tree */
 #define MPU_IRQ_INDEX	0
