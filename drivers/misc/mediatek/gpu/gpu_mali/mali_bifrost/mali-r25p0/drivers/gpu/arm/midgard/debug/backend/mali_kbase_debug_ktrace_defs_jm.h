@@ -23,39 +23,18 @@
 #ifndef _KBASE_DEBUG_KTRACE_DEFS_JM_H_
 #define _KBASE_DEBUG_KTRACE_DEFS_JM_H_
 
-#if KBASE_KTRACE_TARGET_RBUF
 /**
  * DOC: KTrace version history, JM variant
- *
  * 1.0:
- * Original version (implicit, header did not carry version information).
- *
+ * - Original version (implicit, header did not carry version information)
  * 2.0:
- * Introduced version information into the header.
- *
- * Some changes of parameter names in header.
- *
- * Trace now uses all 64-bits of info_val.
- *
- * Non-JM specific parts moved to using info_val instead of refcount/gpu_addr.
- *
- * 2.1:
- * kctx field is no longer a pointer, and is now an ID of the format %d_%u as
- * used by kctx directories in mali debugfs entries: (tgid creating the kctx),
- * (unique kctx id).
- *
- * ftrace backend now outputs kctx field (as %d_%u format).
- *
+ * - Introduced version information into the header
+ * - some changes of parameter names in header
+ * - trace now uses all 64-bits of info_val
+ * - Non-JM specific parts moved to using info_val instead of refcount/gpu_addr
  */
 #define KBASE_KTRACE_VERSION_MAJOR 2
-#define KBASE_KTRACE_VERSION_MINOR 1
-#endif /* KBASE_KTRACE_TARGET_RBUF */
-
-/*
- * Note: mali_kbase_debug_ktrace_jm.h needs these value even if the RBUF target
- * is disabled (they get discarded with CSTD_UNUSED(), but they're still
- * referenced)
- */
+#define KBASE_KTRACE_VERSION_MINOR 0
 
 /* indicates if the trace message has a valid refcount member */
 #define KBASE_KTRACE_FLAG_JM_REFCOUNT (((kbase_ktrace_flag_t)1) << 0)
@@ -64,11 +43,6 @@
 /* indicates if the trace message has valid atom related info. */
 #define KBASE_KTRACE_FLAG_JM_ATOM     (((kbase_ktrace_flag_t)1) << 2)
 
-#if KBASE_KTRACE_TARGET_RBUF
-/* Collect all the flags together for debug checking */
-#define KBASE_KTRACE_FLAG_BACKEND_ALL \
-		(KBASE_KTRACE_FLAG_JM_REFCOUNT | KBASE_KTRACE_FLAG_JM_JOBSLOT \
-		| KBASE_KTRACE_FLAG_JM_ATOM)
 
 /**
  * struct kbase_ktrace_backend - backend specific part of a trace message
@@ -97,6 +71,5 @@ struct kbase_ktrace_backend {
 	u8 jobslot;
 	u8 refcount;
 };
-#endif /* KBASE_KTRACE_TARGET_RBUF */
 
 #endif /* _KBASE_DEBUG_KTRACE_DEFS_JM_H_ */

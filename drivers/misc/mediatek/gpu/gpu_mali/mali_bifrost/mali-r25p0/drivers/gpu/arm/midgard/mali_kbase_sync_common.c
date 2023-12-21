@@ -30,7 +30,6 @@
 #include "mali_kbase.h"
 #include "mali_kbase_sync.h"
 
-#if !MALI_USE_CSF
 void kbase_sync_fence_wait_worker(struct work_struct *data)
 {
 	struct kbase_jd_atom *katom;
@@ -38,7 +37,6 @@ void kbase_sync_fence_wait_worker(struct work_struct *data)
 	katom = container_of(data, struct kbase_jd_atom, work);
 	kbase_soft_event_wait_callback(katom);
 }
-#endif /* !MALI_USE_CSF */
 
 const char *kbase_sync_status_string(int status)
 {

@@ -39,7 +39,8 @@
  * @shader_bm:         counters selection bitmask (Shader).
  * @tiler_bm:          counters selection bitmask (Tiler).
  * @mmu_l2_bm:         counters selection bitmask (MMU_L2).
- * @counter_set:       the performance counter set to use.
+ * @use_secondary:     use secondary performance counters set for applicable
+ *                     counter blocks.
  */
 struct kbase_instr_hwcnt_enable {
 	u64 dump_buffer;
@@ -48,7 +49,7 @@ struct kbase_instr_hwcnt_enable {
 	u32 shader_bm;
 	u32 tiler_bm;
 	u32 mmu_l2_bm;
-	u8 counter_set;
+	bool use_secondary;
 };
 
 /**
@@ -138,7 +139,7 @@ int kbase_instr_backend_init(struct kbase_device *kbdev);
  */
 void kbase_instr_backend_term(struct kbase_device *kbdev);
 
-#ifdef CONFIG_MALI_PRFCNT_SET_SELECT_VIA_DEBUG_FS
+#ifdef CONFIG_MALI_PRFCNT_SET_SECONDARY_VIA_DEBUG_FS
 /**
  * kbase_instr_backend_debugfs_init() - Add a debugfs entry for the
  *                                      hardware counter set.

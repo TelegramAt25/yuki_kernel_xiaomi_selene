@@ -27,6 +27,11 @@ int kbase_ktrace_init(struct kbase_device *kbdev)
 #if KBASE_KTRACE_TARGET_RBUF
 	struct kbase_ktrace_msg *rbuf;
 
+	/* See also documentation of enum kbase_ktrace_code */
+	compiletime_assert(sizeof(kbase_ktrace_code_t) == sizeof(unsigned long long) ||
+			KBASE_KTRACE_CODE_COUNT <= (1ull << (sizeof(kbase_ktrace_code_t) * BITS_PER_BYTE)),
+			"kbase_ktrace_code_t not wide enough for KBASE_KTRACE_CODE_COUNT");
+
 	rbuf = kmalloc_array(KBASE_KTRACE_SIZE, sizeof(*rbuf), GFP_KERNEL);
 
 	if (!rbuf)
@@ -86,24 +91,15 @@ static void kbasep_ktrace_format_msg(struct kbase_ktrace_msg *trace_msg,
 
 	/* Initial part of message:
 	 *
-	 * secs,thread_id,cpu,code,
+	 * secs,thread_id,cpu,code,kctx,
 	 */
 	written += MAX(snprintf(buffer + written, MAX(sz - written, 0),
-			"%d.%.6d,%d,%d,%s,",
+			"%d.%.6d,%d,%d,%s,%p,",
 			(int)trace_msg->timestamp.tv_sec,
 			(int)(trace_msg->timestamp.tv_nsec / 1000),
 			trace_msg->thread_id, trace_msg->cpu,
-			kbasep_ktrace_code_string[trace_msg->backend.code]), 0);
-
-	/* kctx part: */
-	if (trace_msg->kctx_tgid) {
-		written += MAX(snprintf(buffer + written, MAX(sz - written, 0),
-				"%d_%u",
-				trace_msg->kctx_tgid, trace_msg->kctx_id), 0);
-	}
-	/* Trailing comma */
-	written += MAX(snprintf(buffer + written, MAX(sz - written, 0),
-			","), 0);
+			kbasep_ktrace_code_string[trace_msg->backend.code],
+			trace_msg->kctx), 0);
 
 	/* Backend parts */
 	kbasep_ktrace_backend_format_msg(trace_msg, buffer, sz,
@@ -160,16 +156,8 @@ void kbasep_ktrace_msg_init(struct kbase_ktrace *ktrace,
 
 	ktime_get_real_ts64(&trace_msg->timestamp);
 
-	/* No need to store a flag about whether there was a kctx, tgid==0 is
-	 * sufficient
-	 */
-	if (kctx) {
-		trace_msg->kctx_tgid = kctx->tgid;
-		trace_msg->kctx_id = kctx->id;
-	} else {
-		trace_msg->kctx_tgid = 0;
-		trace_msg->kctx_id = 0;
-	}
+	trace_msg->kctx = kctx;
+
 	trace_msg->info_val = info_val;
 	trace_msg->backend.code = code;
 	trace_msg->backend.flags = flags;
@@ -181,8 +169,6 @@ void kbasep_ktrace_add(struct kbase_device *kbdev, enum kbase_ktrace_code code,
 {
 	unsigned long irqflags;
 	struct kbase_ktrace_msg *trace_msg;
-
-	WARN_ON((flags & ~KBASE_KTRACE_FLAG_COMMON_ALL));
 
 	spin_lock_irqsave(&kbdev->ktrace.lock, irqflags);
 

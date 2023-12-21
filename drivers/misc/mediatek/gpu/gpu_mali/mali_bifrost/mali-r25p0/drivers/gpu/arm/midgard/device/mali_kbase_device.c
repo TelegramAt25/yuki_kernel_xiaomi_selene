@@ -21,6 +21,8 @@
  *
  */
 
+
+
 /*
  * Base kernel device APIs
  */
@@ -45,9 +47,9 @@
 #include "mali_kbase_hwcnt_virtualizer.h"
 
 #include "mali_kbase_device.h"
+#include "mali_kbase_device_internal.h"
 #include "backend/gpu/mali_kbase_pm_internal.h"
 #include "backend/gpu/mali_kbase_irq_internal.h"
-#include "mali_kbase_regs_history_debugfs.h"
 
 #ifdef CONFIG_MALI_ARBITER_SUPPORT
 #include "arbiter/mali_kbase_arbiter_pm.h"
@@ -73,27 +75,42 @@ struct kbase_device *kbase_device_alloc(void)
 	return kzalloc(sizeof(struct kbase_device), GFP_KERNEL);
 }
 
-/**
- * kbase_device_all_as_init() - Initialise address space objects of the device.
- *
- * @kbdev: Pointer to kbase device.
- *
- * Return: 0 on success otherwise non-zero.
- */
+static int kbase_device_as_init(struct kbase_device *kbdev, int i)
+{
+	kbdev->as[i].number = i;
+	kbdev->as[i].bf_data.addr = 0ULL;
+	kbdev->as[i].pf_data.addr = 0ULL;
+
+	kbdev->as[i].pf_wq = alloc_workqueue("mali_mmu%d", 0, 1, i);
+	if (!kbdev->as[i].pf_wq)
+		return -EINVAL;
+
+	INIT_WORK(&kbdev->as[i].work_pagefault, page_fault_worker);
+	INIT_WORK(&kbdev->as[i].work_busfault, bus_fault_worker);
+
+	return 0;
+}
+
+static void kbase_device_as_term(struct kbase_device *kbdev, int i)
+{
+	destroy_workqueue(kbdev->as[i].pf_wq);
+}
+
 static int kbase_device_all_as_init(struct kbase_device *kbdev)
 {
-	int i, err = 0;
+	int i, err;
 
 	for (i = 0; i < kbdev->nr_hw_address_spaces; i++) {
-		err = kbase_mmu_as_init(kbdev, i);
+		err = kbase_device_as_init(kbdev, i);
 		if (err)
-			break;
+			goto free_workqs;
 	}
 
-	if (err) {
-		while (i-- > 0)
-			kbase_mmu_as_term(kbdev, i);
-	}
+	return 0;
+
+free_workqs:
+	for (; i > 0; i--)
+		kbase_device_as_term(kbdev, i);
 
 	return err;
 }
@@ -103,7 +120,7 @@ static void kbase_device_all_as_term(struct kbase_device *kbdev)
 	int i;
 
 	for (i = 0; i < kbdev->nr_hw_address_spaces; i++)
-		kbase_mmu_as_term(kbdev, i);
+		kbase_device_as_term(kbdev, i);
 }
 
 int kbase_device_misc_init(struct kbase_device * const kbdev)
@@ -177,7 +194,7 @@ int kbase_device_misc_init(struct kbase_device * const kbdev)
 
 	err = kbase_device_all_as_init(kbdev);
 	if (err)
-		goto dma_set_mask_failed;
+		goto as_init_failed;
 
 	spin_lock_init(&kbdev->hwcnt.lock);
 
@@ -214,6 +231,7 @@ term_trace:
 	kbase_ktrace_term(kbdev);
 term_as:
 	kbase_device_all_as_term(kbdev);
+as_init_failed:
 dma_set_mask_failed:
 fail:
 	return err;
