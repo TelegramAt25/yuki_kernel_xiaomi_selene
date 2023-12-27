@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.333 Kernel Configuration
+# Linux/arm64 4.14.334 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -769,6 +769,7 @@ CONFIG_TCP_CONG_HTCP=y
 CONFIG_TCP_CONG_DCTCP=y
 # CONFIG_TCP_CONG_CDG is not set
 CONFIG_TCP_CONG_BBR=y
+# CONFIG_TCP_CONG_BBRPLUS is not set
 # CONFIG_DEFAULT_BIC is not set
 # CONFIG_DEFAULT_CUBIC is not set
 # CONFIG_DEFAULT_HTCP is not set
@@ -1201,6 +1202,7 @@ CONFIG_NFC=y
 # Near Field Communication (NFC) devices
 #
 CONFIG_NFC_PN553_DEVICES=y
+# CONFIG_NFC_PN553_19A_DEVICES is not set
 # CONFIG_NFC_PN533_USB is not set
 # CONFIG_NFC_PN533_I2C is not set
 # CONFIG_PSAMPLE is not set
