@@ -1203,7 +1203,7 @@ CONFIG_NFC=y
 # Near Field Communication (NFC) devices
 #
 CONFIG_NFC_PN553_DEVICES=y
-CONFIG_NFC_PN553_19A_DEVICES=y
+# CONFIG_NFC_PN553_19A_DEVICES is not set
 # CONFIG_NFC_PN533_USB is not set
 # CONFIG_NFC_PN533_I2C is not set
 # CONFIG_PSAMPLE is not set
